@@ -17,6 +17,8 @@ package com.google.cloud.bigtable.beam.it;
 
 import static com.google.cloud.bigtable.hbase.BigtableOptionsFactory.BIGTABLE_ADMIN_HOST_KEY;
 import static com.google.cloud.bigtable.hbase.BigtableOptionsFactory.BIGTABLE_HOST_KEY;
+import static com.google.common.truth.Truth.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 
 import com.google.cloud.bigtable.beam.CloudBigtableIO;
 import com.google.cloud.bigtable.beam.CloudBigtableScanConfiguration;
@@ -35,6 +37,7 @@ import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.metrics.Counter;
+import org.apache.beam.sdk.metrics.Lineage;
 import org.apache.beam.sdk.metrics.Metrics;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.PAssert;
@@ -65,6 +68,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.apache.beam.sdk.metrics.Lineage;
 
 /**
  * This class contains integration test for Beam Dataflow.It creates dataflow pipelines that perform
@@ -165,16 +169,17 @@ public class CloudBigtableBeamIT {
       keys.add(RandomStringUtils.randomAlphanumeric(10));
     }
 
-    PipelineResult.State result =
+    PipelineResult result =
         Pipeline.create(options)
             .apply("Keys", Create.of(keys))
             .apply("Create Puts", ParDo.of(WRITE_ONE_TENTH_PERCENT))
             .apply("Write to BT", CloudBigtableIO.writeToTable(config))
             .getPipeline()
-            .run()
-            .waitUntilFinish();
+            .run();
+    PipelineResult.State state =
+        result.waitUntilFinish();
 
-    Assert.assertEquals(PipelineResult.State.DONE, result);
+    Assert.assertEquals(PipelineResult.State.DONE, state);
 
     try (ResultScanner scanner =
         connection.getTable(tableName).getScanner(new Scan().setFilter(new KeyOnlyFilter()))) {
@@ -184,6 +189,9 @@ public class CloudBigtableBeamIT {
       }
       Assert.assertEquals(TOTAL_ROW_COUNT, count);
     }
+    // assertThat(Lineage.query(result.metrics(), Lineage.Type.SINK),
+    //     hasItem(String.format("bigtable:%s.%s.%s", config.getProjectId(), config.getInstanceId(),
+    //         config.getTableId())));
   }
 
   @Test
@@ -236,8 +244,13 @@ public class CloudBigtableBeamIT {
 
     PAssert.thatSingleton(count).isEqualTo(TOTAL_ROW_COUNT);
 
-    PipelineResult.State result = pipeLine.run().waitUntilFinish();
-    Assert.assertEquals(PipelineResult.State.DONE, result);
+    PipelineResult result = pipeLine.run();
+    PipelineResult.State state = result.waitUntilFinish();
+    Assert.assertEquals(PipelineResult.State.DONE, state);
+    LOG.info(Lineage.getSinks());
+    // assertThat(Lineage.query(result.metrics(), Lineage.Type.SOURCE),
+    //     hasItem(String.format("bigtable:%s.%s.%s", config.getProjectId(), config.getInstanceId(),
+    //         config.getTableId())));
   }
 
   private static byte[] createRandomValue() {

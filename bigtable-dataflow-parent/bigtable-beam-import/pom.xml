@@ -36,7 +36,6 @@ limitations under the License.
         <artifactId>beam-sdks-java-google-cloud-platform-bom</artifactId>
         <version>${beam.version}</version>
         <type>pom</type>
-        <scope>import</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -46,14 +45,17 @@ limitations under the License.
     <dependency>
       <groupId>org.apache.beam</groupId>
       <artifactId>beam-sdks-java-core</artifactId>
+      <version>${beam.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.beam</groupId>
       <artifactId>beam-sdks-java-io-hadoop-format</artifactId>
+      <version>${beam.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.beam</groupId>
       <artifactId>beam-runners-google-cloud-dataflow-java</artifactId>
+      <version>${beam.version}</version>
       <exclusions>
         <exclusion>
           <!-- Avoid conflicts with commons-logging: beam-sdks-java-io-kafka pulls in spring-core which hijacks commons-logging -->
@@ -131,6 +133,7 @@ limitations under the License.
     <dependency>
       <groupId>org.apache.beam</groupId>
       <artifactId>beam-runners-direct-java</artifactId>
+      <version>${beam.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -150,6 +153,7 @@ limitations under the License.
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-bigtable-emulator-core</artifactId>
+      <version>${google-cloud-bigtable-emulator.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
